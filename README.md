@@ -1,1 +1,1 @@
-Simple and effecive platform to manage directly in the computor all of industrial machines that need maintance, it also sends warnings given the time stamp of next schedule maintance (adapted for windows) data base with sqlite.
+Simple and effecive platform to manage directly in the computer all of industrial machines that need maintance, it also sends warnings given the time stamp of next schedule maintance (adapted for windows) data base with sqlite.
