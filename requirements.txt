@@ -1,0 +1,2 @@
+# This project uses only the Python standard library (tkinter, sqlite3).
+# Python 3.8+ is required. No external packages needed.
