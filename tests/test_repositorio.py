@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import closing
 from datetime import date, timedelta
 
 import pytest
@@ -154,7 +155,7 @@ def test_compativel_com_bd_existente(tmp_path):
     """Uma BD criada pela versão antiga (NULL em notas/peças) continua a ler-se."""
     caminho = tmp_path / "antiga.db"
     RepositorioManutencao(str(caminho))
-    with sqlite3.connect(caminho) as conn:
+    with closing(sqlite3.connect(caminho)) as conn, conn:
         conn.execute(
             "INSERT INTO manutencao (nome_maquina, data_manutencao, dias_para_proxima, "
             "data_limite, concluida, notas, pecas_trocadas) "

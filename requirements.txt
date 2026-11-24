@@ -1,2 +1,5 @@
-# This project uses only the Python standard library (tkinter, sqlite3).
-# Python 3.8+ is required. No external packages needed.
+# Dependências da API REST (Python 3.11+).
+# A aplicação de desktop (gestao_manutencao.py) e o verificador de alertas
+# usam apenas a biblioteca padrão e não precisam de nada daqui.
+fastapi==0.165.0
+uvicorn==0.54.0

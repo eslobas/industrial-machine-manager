@@ -1,2 +1,4 @@
-# Dependências só para desenvolvimento/testes
+# Dependências de desenvolvimento/testes
+-r requirements.txt
 pytest>=7
+httpx==0.28.1
