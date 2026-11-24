@@ -5,6 +5,11 @@ line-length = 100
 
 [per-file-target-version]
 "api/**" = "py311"
+"analytics/**" = "py311"
+"dashboard/**" = "py311"
+"scripts/**" = "py311"
+"tests/test_analytics.py" = "py311"
+"tests/test_dashboard.py" = "py311"
 "tests/test_api.py" = "py311"
 
 [lint]
@@ -16,4 +21,4 @@ select = ["E", "F", "W", "I", "B", "UP"]
 "gestao_manutencao.py" = ["E501"]
 
 [lint.isort]
-known-first-party = ["api", "repositorio"]
+known-first-party = ["analytics", "api", "repositorio", "scripts"]

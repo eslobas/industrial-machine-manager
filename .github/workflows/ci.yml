@@ -42,9 +42,15 @@ jobs:
           cache: pip
           cache-dependency-path: |
             requirements.txt
+            requirements-analytics.txt
             requirements-dev.txt
       - run: pip install -r requirements-dev.txt
       - run: python -m pytest -W error
+      - name: Data pipeline smoke test (synthetic data -> Parquet)
+        run: |
+          python -m scripts.gerar_dados_demo --db demo.db --ate 2026-11-24
+          python -m analytics.pipeline --db demo.db --out saida --hoje 2026-11-24
+          python -c "import polars as pl; k = pl.read_parquet('saida/kpis.parquet'); print(k); assert k['registos'][0] > 0"
 
   docker:
     name: Docker build + smoke test

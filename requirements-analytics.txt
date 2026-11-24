@@ -1,0 +1,5 @@
+# Pipeline analítico e dashboard (Python 3.11+).
+duckdb==2.0.1
+polars==2.1.0
+streamlit==1.67.0
+altair==6.3.0
