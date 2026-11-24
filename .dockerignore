@@ -1,0 +1,14 @@
+# Só entram na imagem os ficheiros copiados no Dockerfile; isto mantém o
+# contexto de build pequeno e evita copiar BDs locais ou segredos.
+.git
+.github
+**/__pycache__
+**/*.pyc
+.pytest_cache
+*.db
+*.log
+alertas_log.txt
+tests/
+.venv
+venv
+.env

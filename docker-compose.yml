@@ -1,0 +1,12 @@
+services:
+  api:
+    build: .
+    image: industrial-machine-manager-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - dados:/data
+    restart: unless-stopped
+
+volumes:
+  dados:

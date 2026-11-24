@@ -8,6 +8,7 @@ interval until the next service, and get **alerts** when maintenance is due or o
 ![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
 ![Tkinter](https://img.shields.io/badge/GUI-Tkinter-FFD43B)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
@@ -29,6 +30,7 @@ interval until the next service, and get **alerts** when maintenance is due or o
 ```
 repositorio.py         ─ data layer: SQLite access, validation, typed errors (no UI code)
 api/                   ─ FastAPI REST API, built on repositorio.py
+Dockerfile             ─ container image for the API (+ docker-compose.yml)
 gestao_manutencao.py   ─ Tkinter GUI, built on repositorio.py
 alertas_manutencao.py  ─ standalone alert checker (run on login / via Task Scheduler)
 tests/                 ─ pytest suite (data layer + API)
@@ -88,6 +90,23 @@ curl -X POST localhost:8000/manutencoes -H 'content-type: application/json' \
   -d '{"nome_maquina": "Torno CNC 2", "data_manutencao": "2026-11-24", "dias_para_proxima": 90}'
 ```
 
+### Docker
+
+```bash
+docker compose up --build
+```
+
+The API is served on <http://localhost:8000> and the database lives in the named volume `dados`
+(mounted at `/data`), so it survives container restarts and rebuilds. Without Compose:
+
+```bash
+docker build -t industrial-machine-manager-api .
+docker run -p 8000:8000 -v imm-dados:/data industrial-machine-manager-api
+```
+
+The image (`python:3.13-slim`) contains only the API and the data layer, runs as a non-root user and
+has a `HEALTHCHECK` on `/health`. The desktop app is not part of it.
+
 ### Tests
 
 ```bash
@@ -98,7 +117,7 @@ python -m pytest
 ## 🛠️ Tech stack
 
 **Language** · Python 3 · **API** · FastAPI + Pydantic · **GUI** · Tkinter ·
-**Storage** · SQLite (file-based) · **Tests** · pytest ·
+**Storage** · SQLite (file-based) · **Tests** · pytest · **Container** · Docker ·
 **Platform** · cross-platform core, native notifications on Windows
 
 ## 🗺️ Roadmap
