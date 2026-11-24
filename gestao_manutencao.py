@@ -1,128 +1,18 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sqlite3
-from datetime import datetime, timedelta
-import os
+from datetime import datetime
 
-# ========== CONFIGURAÇÃO DA BASE DE DADOS ==========
-PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))
-DB_NAME = os.path.join(PASTA_ATUAL, "manutencao.db")
-
-def criar_tabelas():
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        # Tabela principal de manutenções (cada registo é uma intervenção)
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS manutencao (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome_maquina TEXT NOT NULL,
-                data_manutencao TEXT NOT NULL,
-                dias_para_proxima INTEGER NOT NULL,
-                data_limite TEXT NOT NULL,
-                concluida INTEGER DEFAULT 0,
-                data_conclusao TEXT,
-                notas TEXT,
-                pecas_trocadas TEXT
-            )
-        ''')
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"ERRO ao criar tabelas: {e}")
-        return False
-
-# ========== FUNÇÕES AUXILIARES ==========
-def calcular_data_limite(data_manutencao, dias):
-    data = datetime.strptime(data_manutencao, "%Y-%m-%d")
-    data_limite = data + timedelta(days=dias)
-    return data_limite.strftime("%Y-%m-%d")
-
-def adicionar_manutencao(nome_maquina, data_manutencao, dias_para_proxima, notas="", pecas=""):
-    try:
-        data_limite = calcular_data_limite(data_manutencao, int(dias_para_proxima))
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO manutencao
-            (nome_maquina, data_manutencao, dias_para_proxima, data_limite, concluida, notas, pecas_trocadas)
-            VALUES (?, ?, ?, ?, 0, ?, ?)
-        ''', (nome_maquina, data_manutencao, dias_para_proxima, data_limite, notas, pecas))
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        messagebox.showerror("Erro", f"Não foi possível adicionar: {e}")
-        return False
-
-def concluir_manutencao(manutencao_id, data_conclusao, notas, pecas):
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE manutencao
-            SET concluida = 1, data_conclusao = ?, notas = ?, pecas_trocadas = ?
-            WHERE id = ?
-        ''', (data_conclusao, notas, pecas, manutencao_id))
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        messagebox.showerror("Erro", f"Erro ao concluir: {e}")
-        return False
-
-def eliminar_manutencao(manutencao_id):
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM manutencao WHERE id = ?", (manutencao_id,))
-        conn.commit()
-        conn.close()
-        return True
-    except Exception as e:
-        messagebox.showerror("Erro", f"Erro ao eliminar: {e}")
-        return False
-
-def obter_todas_manutencoes():
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id, nome_maquina, data_manutencao, dias_para_proxima,
-                   data_limite, concluida, data_conclusao, notas, pecas_trocadas
-            FROM manutencao
-            ORDER BY data_manutencao DESC
-        ''')
-        resultados = cursor.fetchall()
-        conn.close()
-        return resultados
-    except Exception as e:
-        print(f"Erro ao obter dados: {e}")
-        return []
-
-def obter_historico_maquina(nome_maquina, ordem='DESC'):
-    """Retorna o histórico de manutenções de uma máquina, ordenado por data"""
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        cursor.execute(f'''
-            SELECT data_manutencao, data_conclusao, dias_para_proxima, notas, pecas_trocadas
-            FROM manutencao
-            WHERE nome_maquina = ?
-            ORDER BY data_manutencao {ordem}
-        ''', (nome_maquina,))
-        resultados = cursor.fetchall()
-        conn.close()
-        return resultados
-    except Exception as e:
-        print(f"Erro ao obter histórico: {e}")
-        return []
+from repositorio import (
+    ErroRepositorio,
+    ManutencaoJaConcluida,
+    RepositorioManutencao,
+)
 
 # ========== INTERFACE GRÁFICA ==========
 class Aplicacao:
-    def __init__(self, root):
+    def __init__(self, root, repo):
         self.root = root
+        self.repo = repo
         self.root.title("Gestão de Manutenção de Máquinas")
        
         largura = 1200
@@ -261,42 +151,40 @@ class Aplicacao:
             messagebox.showwarning("Campos vazios", "Preencha máquina, data e dias.")
             return
 
+        # A validação (data, dias) é feita pelo repositório
         try:
-            datetime.strptime(data, "%Y-%m-%d")
-        except ValueError:
-            messagebox.showerror("Data inválida", "Use AAAA-MM-DD")
+            self.repo.adicionar(nome, data, dias, notas)
+        except ErroRepositorio as e:
+            messagebox.showerror("Dados inválidos", str(e))
+            return
+        except Exception as e:
+            messagebox.showerror("Erro", f"Não foi possível adicionar: {e}")
             return
 
-        try:
-            dias_int = int(dias)
-            if dias_int <= 0:
-                messagebox.showerror("Dias inválidos", "Número positivo.")
-                return
-        except ValueError:
-            messagebox.showerror("Dias inválidos", "Digite um número inteiro.")
-            return
-
-        if adicionar_manutencao(nome, data, dias_int, notas):
-            messagebox.showinfo("Sucesso", "Manutenção registada!")
-            self.entry_nome.delete(0, tk.END)
-            self.entry_data.delete(0, tk.END)
-            self.entry_data.insert(0, datetime.now().strftime("%Y-%m-%d"))
-            self.entry_dias.delete(0, tk.END)
-            self.text_notas_inicial.delete("1.0", tk.END)  # Limpa o Text
-            self.carregar_dados()
+        messagebox.showinfo("Sucesso", "Manutenção registada!")
+        self.entry_nome.delete(0, tk.END)
+        self.entry_data.delete(0, tk.END)
+        self.entry_data.insert(0, datetime.now().strftime("%Y-%m-%d"))
+        self.entry_dias.delete(0, tk.END)
+        self.text_notas_inicial.delete("1.0", tk.END)  # Limpa o Text
+        self.carregar_dados()
 
     def carregar_dados(self):
         for row in self.tree.get_children():
             self.tree.delete(row)
        
-        manutencoes = obter_todas_manutencoes()
+        try:
+            manutencoes = self.repo.listar()
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao obter dados: {e}")
+            manutencoes = []
         for m in manutencoes:
-            (id_, nome, data_m, dias, data_lim, concluida, data_conc, notas, pecas) = m
-            concluida_str = "Sim" if concluida else "Não"
-            data_conc = data_conc if data_conc else ""
+            concluida_str = "Sim" if m.concluida else "Não"
             # Mostra notas resumidas
-            notas_mostrar = (notas or "")[:50] + "..." if len(notas or "") > 50 else (notas or "")
-            self.tree.insert("", tk.END, values=(id_, nome, data_m, f"{dias} dias", data_lim, concluida_str, data_conc, notas_mostrar))
+            notas_mostrar = m.notas[:50] + "..." if len(m.notas) > 50 else m.notas
+            self.tree.insert("", tk.END, values=(
+                m.id, m.nome_maquina, m.data_manutencao, f"{m.dias_para_proxima} dias",
+                m.data_limite, concluida_str, m.data_conclusao or "", notas_mostrar))
        
         self.atualizar_status(f"Total: {len(manutencoes)} registos")
 
@@ -400,21 +288,26 @@ class Aplicacao:
        
         def guardar():
             data_conc = entry_data_conc.get().strip()
-            try:
-                datetime.strptime(data_conc, "%Y-%m-%d")
-            except ValueError:
-                messagebox.showerror("Data inválida", "Formato AAAA-MM-DD")
-                return
-           
             notas = self.text_notas.get("1.0", tk.END).strip()
             pecas = self.text_pecas.get("1.0", tk.END).strip()
-           
-            if concluir_manutencao(manutencao_id, data_conc, notas, pecas):
-                messagebox.showinfo("Sucesso", "Manutenção concluída com sucesso!")
+
+            try:
+                self.repo.concluir(manutencao_id, data_conc, notas, pecas)
+            except ManutencaoJaConcluida as e:
+                messagebox.showinfo("Info", str(e))
                 janela.destroy()
                 self.carregar_dados()
-            else:
-                messagebox.showerror("Erro", "Não foi possível concluir.")
+                return
+            except ErroRepositorio as e:
+                messagebox.showerror("Erro", str(e))
+                return
+            except Exception as e:
+                messagebox.showerror("Erro", f"Não foi possível concluir: {e}")
+                return
+
+            messagebox.showinfo("Sucesso", "Manutenção concluída com sucesso!")
+            janela.destroy()
+            self.carregar_dados()
        
         btn_guardar = ttk.Button(frame_botoes, text="💾 GUARDAR", command=guardar, width=20)
         btn_guardar.pack(side='left', padx=10)
@@ -451,10 +344,15 @@ class Aplicacao:
             for row in tree_hist.get_children():
                 tree_hist.delete(row)
             # Buscar dados com a ordem selecionada
-            historico = obter_historico_maquina(nome_maquina, ordem_var.get())
-            for reg in historico:
-                data_m, data_conc, dias, notas, pecas = reg
-                tree_hist.insert("", tk.END, values=(data_m, data_conc, f"{dias} dias", notas or "", pecas or ""))
+            try:
+                historico = self.repo.historico_maquina(nome_maquina, ordem_var.get())
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao obter histórico: {e}", parent=janela)
+                return
+            for m in historico:
+                tree_hist.insert("", tk.END, values=(
+                    m.data_manutencao, m.data_conclusao or "", f"{m.dias_para_proxima} dias",
+                    m.notas, m.pecas_trocadas))
        
         ttk.Radiobutton(frame_ordem, text="Mais recente primeiro", variable=ordem_var, value="DESC", command=carregar_historico).pack(side="left", padx=5)
         ttk.Radiobutton(frame_ordem, text="Mais antigo primeiro", variable=ordem_var, value="ASC", command=carregar_historico).pack(side="left", padx=5)
@@ -510,9 +408,17 @@ class Aplicacao:
         data_m = valores[2]
        
         if messagebox.askyesno("Confirmar", f"Eliminar registo de {nome_maquina} de {data_m}?"):
-            if eliminar_manutencao(manutencao_id):
+            try:
+                self.repo.eliminar(manutencao_id)
+            except ErroRepositorio as e:
+                messagebox.showerror("Erro", str(e))
                 self.carregar_dados()
-                messagebox.showinfo("Sucesso", "Registo eliminado.")
+                return
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao eliminar: {e}")
+                return
+            self.carregar_dados()
+            messagebox.showinfo("Sucesso", "Registo eliminado.")
 
     def sair(self):
         if messagebox.askokcancel("Sair", "Deseja sair?"):
@@ -521,11 +427,14 @@ class Aplicacao:
 
 # ========== MAIN ==========
 def main():
-    if not criar_tabelas():
+    try:
+        repo = RepositorioManutencao()
+    except Exception as e:
+        print(f"ERRO ao abrir a base de dados: {e}")
         input("Erro na base de dados. Pressione Enter para sair...")
         return
     root = tk.Tk()
-    app = Aplicacao(root)
+    app = Aplicacao(root, repo)
     root.protocol("WM_DELETE_WINDOW", app.sair)
     root.mainloop()
 

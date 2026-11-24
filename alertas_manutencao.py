@@ -1,12 +1,8 @@
-import sqlite3
-from datetime import datetime, timedelta
-import os
+from datetime import datetime
 import sys
 import ctypes
 
-# Caminho da base de dados
-PASTA_ATUAL = os.path.dirname(os.path.abspath(__file__))
-DB_NAME = os.path.join(PASTA_ATUAL, "manutencao.db")
+from repositorio import RepositorioManutencao
 
 def dias_atrasados(data_limite_str):
     hoje = datetime.now().date()
@@ -27,20 +23,7 @@ def mostrar_notificacao(titulo, mensagem):
 
 def verificar_alertas():
     try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
-        hoje_str = datetime.now().strftime("%Y-%m-%d")
-       
-        # Buscar máquinas com manutenção em atraso ou para hoje
-        cursor.execute('''
-            SELECT id, nome_maquina, data_limite
-            FROM manutencao
-            WHERE concluida = 0 AND data_limite <= ?
-            ORDER BY data_limite
-        ''', (hoje_str,))
-       
-        maquinas_atrasadas = cursor.fetchall()
-        conn.close()
+        maquinas_atrasadas = RepositorioManutencao().pendentes_ate()
 
         if not maquinas_atrasadas:
             print(f"Nenhuma máquina precisa de manutenção hoje. {datetime.now().strftime('%d/%m/%Y %H:%M')}")
@@ -56,8 +39,8 @@ def verificar_alertas():
 
         mensagem = msg_principal
         for maq in maquinas_atrasadas:
-            id_maq, nome, data_limite = maq
-            dias = dias_atrasados(data_limite)
+            nome = maq.nome_maquina
+            dias = dias_atrasados(maq.data_limite)
            
             if dias == 0:
                 status = "🔴 MANUTENÇÃO HOJE!"

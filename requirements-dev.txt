@@ -1,0 +1,2 @@
+# Dependências só para desenvolvimento/testes
+pytest>=7

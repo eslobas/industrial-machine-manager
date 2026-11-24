@@ -26,11 +26,18 @@ database — no server required.
 ## 🧱 How it works
 
 ```
-gestao_manutencao.py   ─ Tkinter GUI + SQLite data layer (table: manutencao)
+repositorio.py         ─ data layer: SQLite access, validation, typed errors (no UI code)
+gestao_manutencao.py   ─ Tkinter GUI, built on repositorio.py
 alertas_manutencao.py  ─ standalone alert checker (run on login / via Task Scheduler)
+tests/                 ─ pytest suite for the data layer
 manutencao.db          ─ SQLite database (created automatically on first run)
 abrir_gestao.bat       ─ Windows launcher
 ```
+
+The data layer is UI-agnostic: it raises `DadosInvalidos`, `ManutencaoNaoEncontrada` or
+`ManutencaoJaConcluida` instead of showing dialogs, so any front end can reuse it. The database
+path defaults to `manutencao.db` next to the code and can be overridden with the
+`MANUTENCAO_DB` environment variable.
 
 **Schema** (`manutencao`): `id`, `nome_maquina`, `data_manutencao`, `dias_para_proxima`,
 `data_limite`, `concluida`, `data_conclusao`, `notas`, `pecas_trocadas`.
@@ -45,6 +52,13 @@ python gestao_manutencao.py
 
 # Check for due/overdue maintenance
 python alertas_manutencao.py            # add --pausa to keep the window open
+```
+
+Run the tests:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
 ```
 
 On Windows you can double-click `abrir_gestao.bat`. To get daily alerts, schedule
