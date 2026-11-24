@@ -2,4 +2,6 @@
 # A aplicação de desktop (gestao_manutencao.py) e o verificador de alertas
 # usam apenas a biblioteca padrão e não precisam de nada daqui.
 fastapi==0.165.0
+# Fixado: o FastAPI aceita starlette>=1.6, e versões novas mudam o TestClient.
+starlette==1.10.0
 uvicorn==0.54.0
