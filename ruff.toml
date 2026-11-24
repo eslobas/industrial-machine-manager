@@ -1,0 +1,19 @@
+# py38 por omissão: repositorio.py e a app de desktop correm em Python 3.8+.
+# A API (FastAPI) exige 3.11+, por isso usa sintaxe mais recente.
+target-version = "py38"
+line-length = 100
+
+[per-file-target-version]
+"api/**" = "py311"
+"tests/test_api.py" = "py311"
+
+[lint]
+# pycodestyle, pyflakes, isort, bugbear, pyupgrade
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[lint.per-file-ignores]
+# Código de layout Tkinter com chamadas longas; partir as linhas não ajuda a ler.
+"gestao_manutencao.py" = ["E501"]
+
+[lint.isort]
+known-first-party = ["api", "repositorio"]

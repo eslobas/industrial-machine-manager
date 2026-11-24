@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -33,7 +33,7 @@ class ManutencaoCriar(BaseModel):
 
 
 class ManutencaoConcluir(BaseModel):
-    data_conclusao: Optional[date] = Field(
+    data_conclusao: date | None = Field(
         default=None, description="Por omissão, a data de hoje"
     )
     notas: str = ""
@@ -49,7 +49,7 @@ class ManutencaoOut(BaseModel):
     dias_para_proxima: int
     data_limite: date
     concluida: bool
-    data_conclusao: Optional[date]
+    data_conclusao: date | None
     notas: str
     pecas_trocadas: str
 

@@ -1,6 +1,6 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
 from datetime import datetime
+from tkinter import messagebox, ttk
 
 from repositorio import (
     ErroRepositorio,
@@ -8,13 +8,14 @@ from repositorio import (
     RepositorioManutencao,
 )
 
+
 # ========== INTERFACE GRÁFICA ==========
 class Aplicacao:
     def __init__(self, root, repo):
         self.root = root
         self.repo = repo
         self.root.title("Gestão de Manutenção de Máquinas")
-       
+
         largura = 1200
         altura = 700
         screen_width = root.winfo_screenwidth()
@@ -22,10 +23,10 @@ class Aplicacao:
         x = (screen_width - largura) // 2
         y = (screen_height - altura) // 2
         root.geometry(f"{largura}x{altura}+{x}+{y}")
-       
+
         self.criar_widgets()
         self.carregar_dados()
-       
+
     def criar_widgets(self):
         # ========== FRAME DE INSERÇÃO ==========
         frame_inserir = ttk.LabelFrame(self.root, text="Registar Nova Manutenção", padding=10)
@@ -172,7 +173,7 @@ class Aplicacao:
     def carregar_dados(self):
         for row in self.tree.get_children():
             self.tree.delete(row)
-       
+
         try:
             manutencoes = self.repo.listar()
         except Exception as e:
@@ -185,7 +186,7 @@ class Aplicacao:
             self.tree.insert("", tk.END, values=(
                 m.id, m.nome_maquina, m.data_manutencao, f"{m.dias_para_proxima} dias",
                 m.data_limite, concluida_str, m.data_conclusao or "", notas_mostrar))
-       
+
         self.atualizar_status(f"Total: {len(manutencoes)} registos")
 
     def concluir(self):
@@ -193,17 +194,17 @@ class Aplicacao:
         if not selected:
             messagebox.showwarning("Selecione", "Selecione um registo.")
             return
-       
+
         item = self.tree.item(selected[0])
         valores = item['values']
         manutencao_id = valores[0]
         nome_maquina = valores[1]
         concluida = valores[5]
-       
+
         if concluida == "Sim":
             messagebox.showinfo("Info", "Esta manutenção já foi concluída.")
             return
-       
+
         # Abrir janela para adicionar notas e peças
         self.janela_concluir(manutencao_id, nome_maquina)
 
@@ -213,38 +214,38 @@ class Aplicacao:
         janela.geometry("700x650")
         janela.transient(self.root)
         janela.grab_set()
-       
+
         # Título
         ttk.Label(janela, text=f"Máquina: {nome_maquina}",
                   font=('Arial', 12, 'bold')).pack(pady=10)
-       
+
         # Separador
         ttk.Separator(janela, orient='horizontal').pack(fill='x', padx=20, pady=5)
-       
+
         # Frame para data
         frame_data = ttk.Frame(janela)
         frame_data.pack(fill='x', padx=20, pady=10)
-       
+
         ttk.Label(frame_data, text="Data de conclusão:",
                   font=('Arial', 10)).pack(side='left', padx=5)
         entry_data_conc = ttk.Entry(frame_data, width=15, font=('Arial', 10))
         entry_data_conc.insert(0, datetime.now().strftime("%Y-%m-%d"))
         entry_data_conc.pack(side='left', padx=5)
-       
+
         # Separador
         ttk.Separator(janela, orient='horizontal').pack(fill='x', padx=20, pady=5)
-       
+
         # Frame para notas
         frame_notas = ttk.LabelFrame(janela, text="📋 DESCRIÇÃO DETALHADA DO SERVIÇO", padding=10)
         frame_notas.pack(fill='both', expand=True, padx=20, pady=10)
-       
+
         # Text area com scrollbar para notas
         text_frame = ttk.Frame(frame_notas)
         text_frame.pack(fill='both', expand=True)
-       
+
         scrollbar_notas = ttk.Scrollbar(text_frame)
         scrollbar_notas.pack(side='right', fill='y')
-       
+
         self.text_notas = tk.Text(text_frame,
                                    height=12,
                                    width=80,
@@ -252,23 +253,23 @@ class Aplicacao:
                                    font=('Arial', 10),
                                    wrap='word')
         self.text_notas.pack(side='left', fill='both', expand=True)
-       
+
         scrollbar_notas.config(command=self.text_notas.yview)
-       
+
         ttk.Label(frame_notas, text="✏️ Descreva aqui os trabalhos realizados, observações, etc.",
                   foreground='gray').pack(anchor='w', pady=2)
-       
+
         # Frame para peças
         frame_pecas = ttk.LabelFrame(janela, text="🔧 PEÇAS TROCADAS", padding=10)
         frame_pecas.pack(fill='x', padx=20, pady=10)
-       
+
         # Text area para peças
         pecas_frame = ttk.Frame(frame_pecas)
         pecas_frame.pack(fill='x')
-       
+
         scrollbar_pecas = ttk.Scrollbar(pecas_frame)
         scrollbar_pecas.pack(side='right', fill='y')
-       
+
         self.text_pecas = tk.Text(pecas_frame,
                                   height=6,
                                   width=80,
@@ -276,16 +277,16 @@ class Aplicacao:
                                   font=('Arial', 10),
                                   wrap='word')
         self.text_pecas.pack(side='left', fill='both', expand=True)
-       
+
         scrollbar_pecas.config(command=self.text_pecas.yview)
-       
+
         ttk.Label(frame_pecas, text="🔩 Liste as peças substituídas (quantidade, referência, etc.)",
                   foreground='gray').pack(anchor='w', pady=2)
-       
+
         # Frame para botões
         frame_botoes = ttk.Frame(janela)
         frame_botoes.pack(fill='x', padx=20, pady=20)
-       
+
         def guardar():
             data_conc = entry_data_conc.get().strip()
             notas = self.text_notas.get("1.0", tk.END).strip()
@@ -308,10 +309,10 @@ class Aplicacao:
             messagebox.showinfo("Sucesso", "Manutenção concluída com sucesso!")
             janela.destroy()
             self.carregar_dados()
-       
+
         btn_guardar = ttk.Button(frame_botoes, text="💾 GUARDAR", command=guardar, width=20)
         btn_guardar.pack(side='left', padx=10)
-       
+
         btn_cancelar = ttk.Button(frame_botoes, text="✖ CANCELAR", command=janela.destroy, width=20)
         btn_cancelar.pack(side='right', padx=10)
 
@@ -320,25 +321,25 @@ class Aplicacao:
         if not selected:
             messagebox.showwarning("Selecione", "Selecione uma máquina para ver o histórico.")
             return
-       
+
         item = self.tree.item(selected[0])
         nome_maquina = item['values'][1]
-       
+
         self.janela_historico(nome_maquina)
 
     def janela_historico(self, nome_maquina):
         janela = tk.Toplevel(self.root)
         janela.title(f"Histórico - {nome_maquina}")
         janela.geometry("800x500")
-       
+
         # Frame para botões de ordenação
         frame_ordem = ttk.Frame(janela)
         frame_ordem.pack(fill="x", padx=10, pady=5)
-       
+
         ttk.Label(frame_ordem, text="Ordenar por data:").pack(side="left", padx=5)
-       
+
         ordem_var = tk.StringVar(value="DESC")
-       
+
         def carregar_historico():
             # Limpar tree
             for row in tree_hist.get_children():
@@ -353,46 +354,46 @@ class Aplicacao:
                 tree_hist.insert("", tk.END, values=(
                     m.data_manutencao, m.data_conclusao or "", f"{m.dias_para_proxima} dias",
                     m.notas, m.pecas_trocadas))
-       
+
         ttk.Radiobutton(frame_ordem, text="Mais recente primeiro", variable=ordem_var, value="DESC", command=carregar_historico).pack(side="left", padx=5)
         ttk.Radiobutton(frame_ordem, text="Mais antigo primeiro", variable=ordem_var, value="ASC", command=carregar_historico).pack(side="left", padx=5)
-       
+
         # Treeview para histórico
         frame_tree = ttk.Frame(janela)
         frame_tree.pack(fill="both", expand=True, padx=10, pady=5)
-       
+
         vsb = ttk.Scrollbar(frame_tree, orient="vertical")
         hsb = ttk.Scrollbar(frame_tree, orient="horizontal")
-       
+
         colunas = ("data_manutencao", "data_conclusao", "intervalo", "notas", "pecas")
         tree_hist = ttk.Treeview(frame_tree, columns=colunas, show="headings",
                                   yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-       
+
         tree_hist.heading("data_manutencao", text="Data da Manutenção")
         tree_hist.heading("data_conclusao", text="Concluída em")
         tree_hist.heading("intervalo", text="Intervalo")
         tree_hist.heading("notas", text="Notas")
         tree_hist.heading("pecas", text="Peças Trocadas")
-       
+
         tree_hist.column("data_manutencao", width=120)
         tree_hist.column("data_conclusao", width=120)
         tree_hist.column("intervalo", width=80)
         tree_hist.column("notas", width=250)
         tree_hist.column("pecas", width=200)
-       
+
         tree_hist.grid(row=0, column=0, sticky="nsew")
         vsb.grid(row=0, column=1, sticky="ns")
         hsb.grid(row=1, column=0, sticky="ew")
-       
+
         frame_tree.grid_rowconfigure(0, weight=1)
         frame_tree.grid_columnconfigure(0, weight=1)
-       
+
         vsb.config(command=tree_hist.yview)
         hsb.config(command=tree_hist.xview)
-       
+
         # Carregar dados iniciais
         carregar_historico()
-       
+
         ttk.Button(janela, text="Fechar", command=janela.destroy).pack(pady=10)
 
     def eliminar(self):
@@ -400,13 +401,13 @@ class Aplicacao:
         if not selected:
             messagebox.showwarning("Selecione", "Selecione um registo.")
             return
-       
+
         item = self.tree.item(selected[0])
         valores = item['values']
         manutencao_id = valores[0]
         nome_maquina = valores[1]
         data_m = valores[2]
-       
+
         if messagebox.askyesno("Confirmar", f"Eliminar registo de {nome_maquina} de {data_m}?"):
             try:
                 self.repo.eliminar(manutencao_id)

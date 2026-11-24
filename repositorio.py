@@ -5,8 +5,6 @@ dados, lança exceções em caso de erro e devolve objetos ``Manutencao``. Quem 
 usa decide como mostrar os erros ao utilizador.
 """
 
-from __future__ import annotations
-
 import os
 import sqlite3
 from contextlib import closing
@@ -211,7 +209,7 @@ class RepositorioManutencao:
             linhas = conn.execute(
                 f"SELECT {_COLUNAS} FROM manutencao ORDER BY data_manutencao DESC, id DESC"
             ).fetchall()
-        return [Manutencao._de_linha(l) for l in linhas]
+        return [Manutencao._de_linha(linha) for linha in linhas]
 
     def historico_maquina(self, nome_maquina: str, ordem: str = "DESC") -> List[Manutencao]:
         ordem = str(ordem).upper()
@@ -225,7 +223,7 @@ class RepositorioManutencao:
                 f"ORDER BY data_manutencao {ordem}, id {ordem}",
                 (nome_maquina,),
             ).fetchall()
-        return [Manutencao._de_linha(l) for l in linhas]
+        return [Manutencao._de_linha(linha) for linha in linhas]
 
     def pendentes_ate(self, data_referencia: Optional[str] = None) -> List[Manutencao]:
         """Manutenções por concluir com data limite igual ou anterior a ``data_referencia``
@@ -238,4 +236,4 @@ class RepositorioManutencao:
                 "WHERE concluida = 0 AND data_limite <= ? ORDER BY data_limite, id",
                 (data,),
             ).fetchall()
-        return [Manutencao._de_linha(l) for l in linhas]
+        return [Manutencao._de_linha(linha) for linha in linhas]

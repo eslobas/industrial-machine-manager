@@ -143,8 +143,9 @@ def test_historico_ordem_invalida_422(client, ordem):
 
 
 def test_alertas(client):
-    atrasada = criar(client, nome_maquina="Atrasada", data_manutencao="2026-01-01").json()  # lim 01-11
-    hoje = criar(client, nome_maquina="Hoje", data_manutencao="2026-01-05").json()          # lim 01-15
+    # limites: Atrasada 01-11, Hoje 01-15, Futura 02-09
+    atrasada = criar(client, nome_maquina="Atrasada", data_manutencao="2026-01-01").json()
+    hoje = criar(client, nome_maquina="Hoje", data_manutencao="2026-01-05").json()
     criar(client, nome_maquina="Futura", data_manutencao="2026-01-10", dias_para_proxima=30)
     feita = criar(client, nome_maquina="Feita", data_manutencao="2026-01-01").json()
     client.post(f"/manutencoes/{feita['id']}/concluir")

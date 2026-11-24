@@ -6,11 +6,9 @@ Executar localmente:
 A documentação interativa fica em /docs.
 """
 
-from __future__ import annotations
-
 from contextlib import asynccontextmanager
 from datetime import date
-from typing import List, Literal, Optional
+from typing import Annotated, Literal
 
 from fastapi import Depends, FastAPI, Query, Request, Response, status
 from fastapi.responses import JSONResponse
@@ -24,10 +22,18 @@ from repositorio import (
 
 from .schemas import AlertaOut, Erro, ManutencaoConcluir, ManutencaoCriar, ManutencaoOut
 
+
+def get_repo(request: Request) -> RepositorioManutencao:
+    """Dependência: o repositório criado no arranque da aplicação."""
+    return request.app.state.repo
+
+
+Repo = Annotated[RepositorioManutencao, Depends(get_repo)]
+
 _ERRO_404 = {404: {"model": Erro, "description": "Manutenção não encontrada"}}
 
 
-def create_app(repo: Optional[RepositorioManutencao] = None) -> FastAPI:
+def create_app(repo: RepositorioManutencao | None = None) -> FastAPI:
     """Cria a aplicação. Sem ``repo``, abre a BD indicada por ``MANUTENCAO_DB``
     (ou a BD por omissão) no arranque."""
 
@@ -56,16 +62,13 @@ def create_app(repo: Optional[RepositorioManutencao] = None) -> FastAPI:
     async def _dados_invalidos(_: Request, exc: DadosInvalidos):
         return JSONResponse(status_code=422, content={"detail": str(exc)})
 
-    def get_repo(request: Request) -> RepositorioManutencao:
-        return request.app.state.repo
-
     # ---------- endpoints ----------
     @app.get("/health", tags=["sistema"])
     def health():
         return {"status": "ok"}
 
-    @app.get("/manutencoes", response_model=List[ManutencaoOut], tags=["manutenções"])
-    def listar(repo: RepositorioManutencao = Depends(get_repo)):
+    @app.get("/manutencoes", response_model=list[ManutencaoOut], tags=["manutenções"])
+    def listar(repo: Repo):
         """Todas as manutenções, da mais recente para a mais antiga."""
         return repo.listar()
 
@@ -78,7 +81,7 @@ def create_app(repo: Optional[RepositorioManutencao] = None) -> FastAPI:
     def criar(
         dados: ManutencaoCriar,
         response: Response,
-        repo: RepositorioManutencao = Depends(get_repo),
+        repo: Repo,
     ):
         """Regista uma manutenção; a data limite é calculada automaticamente."""
         m = repo.adicionar(
@@ -97,7 +100,7 @@ def create_app(repo: Optional[RepositorioManutencao] = None) -> FastAPI:
         responses=_ERRO_404,
         tags=["manutenções"],
     )
-    def obter(manutencao_id: int, repo: RepositorioManutencao = Depends(get_repo)):
+    def obter(manutencao_id: int, repo: Repo):
         return repo.obter(manutencao_id)
 
     @app.post(
@@ -108,8 +111,8 @@ def create_app(repo: Optional[RepositorioManutencao] = None) -> FastAPI:
     )
     def concluir(
         manutencao_id: int,
-        dados: Optional[ManutencaoConcluir] = None,
-        repo: RepositorioManutencao = Depends(get_repo),
+        repo: Repo,
+        dados: ManutencaoConcluir | None = None,
     ):
         """Marca a manutenção como concluída (sem corpo: concluída hoje, sem notas)."""
         dados = dados or ManutencaoConcluir()
@@ -122,27 +125,29 @@ def create_app(repo: Optional[RepositorioManutencao] = None) -> FastAPI:
         responses=_ERRO_404,
         tags=["manutenções"],
     )
-    def eliminar(manutencao_id: int, repo: RepositorioManutencao = Depends(get_repo)):
+    def eliminar(manutencao_id: int, repo: Repo):
         repo.eliminar(manutencao_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     @app.get(
         "/maquinas/{nome_maquina}/historico",
-        response_model=List[ManutencaoOut],
+        response_model=list[ManutencaoOut],
         tags=["máquinas"],
     )
     def historico(
         nome_maquina: str,
-        ordem: Literal["asc", "desc"] = Query("desc", description="Ordenação por data"),
-        repo: RepositorioManutencao = Depends(get_repo),
+        repo: Repo,
+        ordem: Annotated[Literal["asc", "desc"], Query(description="Ordenação por data")] = "desc",
     ):
         """Histórico de manutenções de uma máquina (lista vazia se não existir)."""
         return repo.historico_maquina(nome_maquina, ordem)
 
-    @app.get("/alertas", response_model=List[AlertaOut], tags=["alertas"])
+    @app.get("/alertas", response_model=list[AlertaOut], tags=["alertas"])
     def alertas(
-        data: Optional[date] = Query(None, description="Data de referência (por omissão, hoje)"),
-        repo: RepositorioManutencao = Depends(get_repo),
+        repo: Repo,
+        data: Annotated[
+            date | None, Query(description="Data de referência (por omissão, hoje)")
+        ] = None,
     ):
         """Manutenções por concluir que vencem até à data de referência, mais atrasadas primeiro."""
         referencia = data or date.today()

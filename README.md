@@ -5,7 +5,8 @@ interval until the next service, and get **alerts** when maintenance is due or o
 **Python** on a shared **SQLite** data layer, with two front ends: a **FastAPI REST API** and a
 **Tkinter** desktop app.
 
-![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)
+[![CI](https://github.com/eslobas/industrial-machine-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/eslobas/industrial-machine-manager/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.8+_desktop_·_3.11+_API-3776AB?logo=python&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)
@@ -112,12 +113,17 @@ has a `HEALTHCHECK` on `/health`. The desktop app is not part of it.
 ```bash
 pip install -r requirements-dev.txt
 python -m pytest
+ruff check .
 ```
+
+**CI** (GitHub Actions, `.github/workflows/ci.yml`) runs on every push and pull request: ruff lint,
+the test suite on Python 3.11 / 3.12 / 3.13, then builds the Docker image and smoke-tests the
+running container (health check, create and fetch a record, 404 on a missing one).
 
 ## 🛠️ Tech stack
 
 **Language** · Python 3 · **API** · FastAPI + Pydantic · **GUI** · Tkinter ·
-**Storage** · SQLite (file-based) · **Tests** · pytest · **Container** · Docker ·
+**Storage** · SQLite (file-based) · **Tests** · pytest · **Container** · Docker · **CI** · GitHub Actions ·
 **Platform** · cross-platform core, native notifications on Windows
 
 ## 🗺️ Roadmap

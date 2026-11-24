@@ -166,7 +166,8 @@ def test_compativel_com_bd_existente(tmp_path):
 
 
 def test_repositorio_nao_importa_tkinter():
-    import subprocess, sys
+    import subprocess
+    import sys
     from pathlib import Path
     codigo = (
         "import sys; sys.modules['tkinter'] = None; "
